@@ -3,6 +3,12 @@ _ariadne() { # was _longhistory :)
 
 # Detailed history log of shell activities, including time stamps, working directory etc.
 #
+## Add something like the following to ~/.zshrc:
+# precmd() {
+#     _ariadne -h -t -u 
+# }
+##
+#
 # Based on 'hcmnt' by Dennis Williamson - 2009-06-05 - updated 2009-06-19
 # (http://stackoverflow.com/questions/945288/saving-current-directory-to-bash-history)
 #
