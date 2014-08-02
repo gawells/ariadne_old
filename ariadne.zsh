@@ -1,4 +1,5 @@
-_loghistory() {
+_ariadne() { # was _longhistory :)
+# Modified for zsh - Gordon Wells 2014/08
 
 # Detailed history log of shell activities, including time stamps, working directory etc.
 #
@@ -13,6 +14,7 @@ _loghistory() {
 #     e - add the output of an extra command contained in the histentrycmdextra variable
 #     h - add the hostname
 #     y - add the terminal device (tty)
+#     u - add the username
 #     n - don't add the directory
 #     t - add the from and to directories for cd commands
 #     l - path to the log file (default = $HOME/.bash_log)
@@ -21,25 +23,22 @@ _loghistory() {
 # See bottom of this function for examples.
 #
 
-    # make sure this is not changed elsewhere in '.bashrc';
-    # if it is, you have to update the reg-ex's below
-    export HISTTIMEFORMAT="[%F %T] ~~~ "
-
     local script=$FUNCNAME
     local histentrycmd=
     local cwd=
     local extra=
     local text=
-    local logfile="$HOME/.bash_log"
+    local logfile="$HOME/.zsh_log"
     local hostname=
     local histentry=
     local histleader=
     local datetimestamp=
     local histlinenum=
-    local options=":hyntel:"
+    local username=
+    local options=":hyunte:l:"
     local option=
     OPTIND=1
-    local usage="Usage: $script [-h] [-y] [-n|-t] [-e] [text] [-l logfile]"
+    local usage="Usage: $script [-h] [-y] [-u] [-n|-t] [-e] [text] [-l logfile]"
 
     local ExtraOpt=
     local NoneOpt=
@@ -52,9 +51,10 @@ _loghistory() {
     while getopts $options option
     do
         case $option in
-            h ) hostname=$HOSTNAME;;
+            h ) hostname=$(hostname);;
             y ) tty=$(tty);;
-            n ) if [[ $ToOpt ]]
+            u ) username=$USER;;
+            n ) if [[ -n $ToOpt ]]
                 then
                     echo "$script: can't include both -n and -t."
                     echo $usage
@@ -62,7 +62,7 @@ _loghistory() {
                 else
                     NoneOpt=1       # don't include path
                 fi;;
-            t ) if [[ $NoneOpt ]]
+            t ) if [[ -n $NoneOpt  ]]
                 then
                     echo "$script: can't include both -n and -t."
                     echo $usage
@@ -70,7 +70,7 @@ _loghistory() {
                 else
                     ToOpt=1         # cd shows "from -> to"
                 fi;;
-            e ) ExtraOpt=1;;        # include histentrycmdextra
+            e ) ExtraOpt=1;histentrycmdextra=$OPTARG;;        # include histentrycmdextra
             l ) logfile=$OPTARG;;
             : ) echo "$script: missing filename: -$OPTARG."
                 echo $usage
@@ -86,20 +86,34 @@ _loghistory() {
 
     # add the previous command(s) to the history file immediately
     # so that the history file is in sync across multiple shell sessions
-    history -a
+    # history -a
 
     # grab the most recent command from the command history
-    histentry=$(history 1)
+    histentry=$(fc -i -l -1 -1)
 
     # parse it out
-    histleader=`expr "$histentry" : ' *\([0-9]*  \[[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*:[0-9]*\]\)'`
-    histlinenum=`expr "$histleader" : ' *\([0-9]*  \)'`
-    datetimestamp=`expr "$histleader" : '.*\(\[[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*:[0-9]*\]\)'`
-    histentrycmd=${histentry#*~~~ }
+    if [[ $histentry =~ "[0-9]* *[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*" ]]; then
+        histleader=$MATCH
+    fi;
+    
+    if [[ $histleader =~ "[0-9]*" ]]; then
+        histlinenum=$MATCH
+    fi;
+    
+    if [[ $histleader =~ "[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*" ]];  then
+        datetimestamp=$MATCH
+    fi;
+
+    # histlinenum=`expr "$histleader" : ' *\([0-9]*  \)'`
+    # datetimestamp=`expr "$histleader" : '.*\(\[[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*:[0-9]*\]\)'`
+
+    histentrycmd=$(fc -l -n -1 -1)
+    # print $histentrycmd
 
     # protect against relogging previous command
     # if all that was actually entered by the user
     # was a (no-op) blank line
+    # print "$histentrycmd"
     if [[ -z $__PREV_HISTLINE || -z $__PREV_HISTCMD ]]
     then
         # new shell; initialize variables for next command
@@ -118,13 +132,17 @@ _loghistory() {
 
     if [[ -z $NoneOpt ]]            # are we adding the directory?
     then
-        if [[ ${histentrycmd%% *} == "cd" || ${histentrycmd%% *} == "jd" ]]    # if it's a cd command, we want the old directory
+        if [[ ${histentrycmd%% *} == "cd" \
+         || ${histentrycmd%% *} == "j"  \
+         || $histentrycmd%% =~ "^~" ]]    # if it's a cd command, we want the old directory
+         # modified for autjump (j) and named directories (~), not sure how to deal with autocd
+         # Doesn't detect failure to change to restricted directories
         then                             #   so the comment matches other commands "where *were* you when this was done?"
             if [[ -z $OLDPWD ]]
             then
                 OLDPWD="$HOME"
             fi
-            if [[ $ToOpt ]]
+            if [[ -n $ToOpt ]]
             then
                 cwd="$OLDPWD -> $PWD"    # show "from -> to" for cd
             else
@@ -135,14 +153,16 @@ _loghistory() {
         fi
     fi
 
-    if [[ $ExtraOpt && $histentrycmdextra ]]    # do we want a little something extra?
+    if [[ -n $ExtraOpt && -n $histentrycmdextra ]]    # do we want a little something extra?
     then
-        extra=$(eval "$histentrycmdextra")
+        extra=$(eval ${histentrycmdextra})
     fi
 
     # strip off the old ### comment if there was one so they don't accumulate
     # then build the string (if text or extra aren't empty, add them with some decoration)
-    histentrycmd="${datetimestamp} ${text:+[$text] }${tty:+[$tty] }${ip:+[$ip] }${extra:+[$extra] }~~~ ${hostname:+$hostname:}$cwd ~~~ ${histentrycmd# * ~~~ }"
+    # histentrycmd="${datetimestamp} ${text:+[$text] }${tty:+[$tty] }${ip:+[$ip] }${extra:+[$extra] }~~~ ${hostname:+$hostname:}$cwd ~~~ ${histentrycmd# * ~~~ }"
+    histentrycmd="${histentrycmd} ### ${datetimestamp} , ${histlinenum} , ${username:+$username@}${hostname:+$hostname:}${cwd} ,  ${tty:+[$tty] } , ${ip:+[$ip] } , ${extra:+[$extra] }"
+    
     # save the entry in a logfile
     echo "$histentrycmd" >> $logfile || echo "$script: file error." ; return 1
 
