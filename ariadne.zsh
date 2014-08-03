@@ -92,34 +92,20 @@ _ariadne() { # was _loghistory :)
 
     # add the previous command(s) to the history file immediately
     # so that the history file is in sync across multiple shell sessions
-    # history -a
+    fc -A
 
     # grab the most recent command from the command history
     histentry=$(fc -i -l -1 -1)
+    histentrycmd=$(fc -l -n -1 -1)
 
     # parse it out
-    if [[ $histentry =~ "[0-9]* *[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*" ]]; then
-        histleader=$MATCH
-    fi;
-    
-    if [[ $histleader =~ "[0-9]*" ]]; then
-        histlinenum=$MATCH
-    fi;
-    
-    if [[ $histleader =~ "[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*" ]];  then
-        datetimestamp=$MATCH
-    fi;
-
-    # histlinenum=`expr "$histleader" : ' *\([0-9]*  \)'`
-    # datetimestamp=`expr "$histleader" : '.*\(\[[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*:[0-9]*\]\)'`
-
-    histentrycmd=$(fc -l -n -1 -1)
-    # print $histentrycmd
+    [[ $histentry =~ "[0-9]* *[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*" ]] && histleader=$MATCH
+    [[ $histleader =~ "[0-9]*" ]] && histlinenum=$MATCH
+    [[ $histleader =~ "[0-9]*-[0-9]*-[0-9]* [0-9]*:[0-9]*" ]] && datetimestamp=$MATCH
 
     # protect against relogging previous command
     # if all that was actually entered by the user
     # was a (no-op) blank line
-    # print "$histentrycmd"
     if [[ -z $__PREV_HISTLINE || -z $__PREV_HISTCMD ]]
     then
         # new shell; initialize variables for next command
@@ -164,8 +150,7 @@ _ariadne() { # was _loghistory :)
         extra=$(eval ${histentrycmdextra})
     fi
 
-    # strip off the old ### comment if there was one so they don't accumulate
-    # then build the string (if text or extra aren't empty, add them with some decoration)
+    # build the string (if text or extra aren't empty, add them with some decoration)
     # histentrycmd="${datetimestamp} ${text:+[$text] }${tty:+[$tty] }${ip:+[$ip] }${extra:+[$extra] }~~~ ${hostname:+$hostname:}$cwd ~~~ ${histentrycmd# * ~~~ }"
     histentrycmd="${histentrycmd} ### ${datetimestamp} , ${histlinenum} , ${username:+$username@}${hostname:+$hostname:}${cwd} ,  ${tty:+[$tty] } , ${ip:+[$ip] } , ${extra:+[$extra] }"
     
