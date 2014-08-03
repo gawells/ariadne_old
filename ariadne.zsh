@@ -1,4 +1,4 @@
-_ariadne() { # was _longhistory :)
+_ariadne() { # was _loghistory :)
 # Modified for zsh - Gordon Wells 2014/08
 
 # Detailed history log of shell activities, including time stamps, working directory etc.
