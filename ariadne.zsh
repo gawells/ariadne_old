@@ -4,6 +4,7 @@ _ariadne() { # was _loghistory :)
 # Detailed history log of shell activities, including time stamps, working directory etc.
 #
 ## Add something like the following to ~/.zshrc:
+# source ariadne.zsh
 # precmd() {
 #     _ariadne -h -t -u 
 # }
