@@ -92,7 +92,7 @@ _ariadne() { # was _loghistory :)
 
     # add the previous command(s) to the history file immediately
     # so that the history file is in sync across multiple shell sessions
-    fc -A
+    fc -W
 
     # grab the most recent command from the command history
     histentry=$(fc -i -l -1 -1)
