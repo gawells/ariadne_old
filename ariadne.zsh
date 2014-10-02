@@ -12,6 +12,7 @@ _ariadne() { # was _loghistory :)
 #
 # Based on 'hcmnt' by Dennis Williamson - 2009-06-05 - updated 2009-06-19
 # (http://stackoverflow.com/questions/945288/saving-current-directory-to-bash-history)
+# (https://gist.github.com/jeetsukumaran/2202879)
 #
 # Add this function to your '~/.bashrc':
 #
