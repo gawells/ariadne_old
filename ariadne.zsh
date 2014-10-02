@@ -93,7 +93,7 @@ _ariadne() { # was _loghistory :)
 
     # add the previous command(s) to the history file immediately
     # so that the history file is in sync across multiple shell sessions
-    fc -W
+    fc -AI
 
     # grab the most recent command from the command history
     histentry=$(fc -i -l -1 -1)
@@ -159,3 +159,34 @@ _ariadne() { # was _loghistory :)
     echo "$histentrycmd" >> $logfile || echo "$script: file error." ; return 1
 
 } # END FUNCTION _loghistory
+
+function exists { which $1 &> /dev/null }
+# if percol is installed, use it to search .zsh_log to retrieve old command or the directory in which it was executed
+# modified from https://github.com/mooz/percol#zsh-history-search
+
+if exists percol; then
+    function percol_sel_log_history_cwd() {
+        local tac
+        exists gtac && tac="gtac" || { exists tac && tac="tac" || { tac="tail -r" } }
+        BUFFER=$(awk 'BEGIN {FS="###"} {ORS=" "; print substr($0,0, length($0) -length($NF)); split($(NF),a,","); split(a[3],b,"[@: ]"); ORS="\n"; print b[4]}' ~/.zsh_log | percol | awk 'BEGIN {FS="###"} {print $2}')
+        CURSOR=$#BUFFER         # move cursor
+        zle -R -c               # refresh
+    }
+
+    zle -N percol_sel_log_history_cwd
+    bindkey '^W' percol_sel_log_history_cwd
+fi
+
+if exists percol; then
+    function percol_sel_log_history() {
+        local tac
+        exists gtac && tac="gtac" || { exists tac && tac="tac" || { tac="tail -r" } }
+        BUFFER=$(awk 'BEGIN {FS="###"} {ORS=" "; print substr($0,0, length($0) -length($NF)); split($(NF),a,","); split(a[3],b,"[@: ]"); ORS="\n"; print b[4]}' ~/.zsh_log | percol | awk 'BEGIN {FS="###"} {print $1}')
+        CURSOR=$#BUFFER         # move cursor
+        zle -R -c               # refresh
+    }
+
+    zle -N percol_sel_log_history
+    bindkey '^R' percol_sel_log_history
+fi
+
