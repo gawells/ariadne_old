@@ -167,8 +167,6 @@ function exists { which $1 &> /dev/null }
 
 if exists percol; then
     function percol_sel_log_history_cwd() {
-        local tac
-        exists gtac && tac="gtac" || { exists tac && tac="tac" || { tac="tail -r" } }
         BUFFER=$(awk 'BEGIN {FS="###"} {ORS=">> "; split($(NF),a,","); split(a[3],b,"[@: ]"); print b[4];  ORS="\n"; print substr($0,0, length($0) -length($NF)-4);}' ~/.zsh_log | percol --reverse | awk 'BEGIN {FS=">> "} {print $1}')
         CURSOR=$#BUFFER         # move cursor
         zle -R -c               # refresh
@@ -180,8 +178,6 @@ fi
 
 if exists percol; then
     function percol_sel_log_history() {
-        local tac
-        exists gtac && tac="gtac" || { exists tac && tac="tac" || { tac="tail -r" } }
         BUFFER=$(awk 'BEGIN {FS="###"} {ORS=">> "; split($(NF),a,","); split(a[3],b,"[@: ]"); print b[4];  ORS="\n"; print substr($0,0, length($0) -length($NF)-4);}' ~/.zsh_log | percol  --reverse | awk 'BEGIN {FS=">> "} {print $2}')
         CURSOR=$#BUFFER         # move cursor
         zle -R -c               # refresh
