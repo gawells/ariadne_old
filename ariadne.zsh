@@ -168,15 +168,17 @@ function exists { which $1 &> /dev/null }
 if exists percol; then
     function percol_sel_log_history_cwd() {
         RCFILE="$HOME/.oh-my-zsh/custom/ariadne/rc.py"
-        BUFFER=$(gawk 'BEGIN {FS="###"} {ORS=" >> "; \
-                split($(NF),a,","); \
-                split(a[3],b,"[@: ]"); \
-                print a[1];\
-                print b[4];  \
-                ORS="\n"; \
-                print substr($0,0, length($0) -length($NF)-4);
-            }' ~/.zsh_log | percol --reverse --rcfile=$RCFILE \
-            | gawk 'BEGIN {FS=" >> "} {print $2}')
+        BUFFER=$(gawk 'BEGIN {FS="###"} {\
+            ORS=" >> "; \
+            split($(NF),a,","); \
+            split(a[3],b,"[@:]"); \
+            print a[1];\
+            s=gensub(/ $/,"","g",b[3]);\
+            print gensub(/ /,"\\\\ ","g",s);  \
+            ORS="\n"; \
+            print substr($0,0, length($0) -length($NF)-4);
+        }' ~/.zsh_log | percol --reverse --rcfile=$RCFILE \
+        | gawk 'BEGIN {FS=" >> "} {print $2}')
         CURSOR=$#BUFFER         # move cursor
         zle -R -c               # refresh
     }
@@ -191,9 +193,10 @@ if exists percol; then
         BUFFER=$(gawk 'BEGIN {FS="###"} {\
             ORS=" >> "; \
             split($(NF),a,","); \
-            split(a[3],b,"[@: ]"); \
+            split(a[3],b,"[@:]"); \
             print a[1];\
-            print b[4];  \
+            s=gensub(/ $/,"","g",b[3]);\
+            print gensub(/ /,"\\\\ ","g",s);\
             ORS="\n"; \
             print substr($0,0, length($0) -length($NF)-4);\
         }' ~/.zsh_log | percol  --reverse --rcfile=$RCFILE\
