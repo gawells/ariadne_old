@@ -128,7 +128,7 @@ _ariadne() { # was _loghistory :)
     then
         if [[ ${histentrycmd%% *} == "cd" \
          || ${histentrycmd%% *} == "j"  \
-         || $histentrycmd%% =~ "^~" ]]    # if it's a cd command, we want the old directory
+         || $histentrycmd%% =~ "^~-" ]]    # if it's a cd command, we want the old directory
          # modified for autjump (j) and named directories (~), not sure how to deal with autocd
          # Doesn't detect failure to change to restricted directories
         then                             #   so the comment matches other commands "where *were* you when this was done?"
